@@ -1,0 +1,2 @@
+          screen-3953    [000] ..s..  7180.168353: irq_handler_entry: vec=7 [action=SCHED]
+          screen-3953    [000] ..s..  7180.168512: irq_handler_exit: vec=7 [action=SCHED]

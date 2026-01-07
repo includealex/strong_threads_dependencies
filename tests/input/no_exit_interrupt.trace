@@ -1,0 +1,7 @@
+# tracer: function
+#
+#           TASK-PID    CPU#    TIMESTAMP  FUNCTION
+#              | |       |          |         |
+               a-1       [007] ..s..  1111.222333: any_event: anything
+          screen-3953    [000] ..s..  7180.168512: softirq_entry: vec=7 [action=SCHED]
+               c-3       [009] ..s..  8880.000111: any_event: anything

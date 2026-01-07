@@ -61,6 +61,9 @@ enable_required_events() {
 
     local events="\
         sched/sched_wakeup sched/sched_switch sched/sched_waking \
+        irq/irq_handler_entry irq/irq_handler_exit \
+        irq/softirq_entry irq/softirq_exit \
+        irq/tasklet_entry irq/tasklet_exit \
     "
     for ev in ${events}; do
         enable_event ${events_path}/${ev}

@@ -1,0 +1,7 @@
+# tracer: function
+#
+#           TASK-PID    CPU#    TIMESTAMP  FUNCTION
+#              | |       |          |         |
+               a-1       [007] ..s..  1111.222333: any_event: anything
+               b-2       [008] ..s..  1111.222433: any_event: anything
+               c-3       [009] ..s..  8880.000111: any_event: anything
