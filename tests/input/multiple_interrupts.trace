@@ -1,0 +1,6 @@
+          a-3953    [000] ..s..  0001.000100: irq_handler_entry: vec=7 [action=SCHED]
+          a-3953    [000] ..s..  0001.000150: softirq_entry: vec=7 [action=SCHED]
+          a-3953    [000] ..s..  0001.000200: softirq_exit: vec=7 [action=SCHED]
+          b-3953    [001] ..s..  0001.000200: tasklet_exit: vec=7 [action=SCHED]
+          a-3953    [000] ..s..  0001.000450: irq_handler_exit: vec=7 [action=SCHED]
+
