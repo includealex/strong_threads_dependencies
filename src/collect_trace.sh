@@ -60,7 +60,7 @@ enable_required_events() {
     echo 0 > "${events_path}/enable" 
 
     local events="\
-        sched/sched_wakeup sched/sched_switch \
+        sched/sched_wakeup sched/sched_switch sched/sched_waking \
     "
     for ev in ${events}; do
         enable_event ${events_path}/${ev}
