@@ -2,7 +2,7 @@ import pytest
 from src.parsers import FirstLastStamperParser
 from pathlib import Path
 
-INPUT_PATH = Path("tests/input")
+INPUT_PATH = Path("tests/input/firstlaststamper/")
 
 @pytest.mark.parametrize(
     ("trace_path", "expected"),
