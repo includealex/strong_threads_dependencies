@@ -3,7 +3,7 @@ from src.parsers import InterruptsParser
 import portion
 from pathlib import Path
 
-INPUT_PATH = Path("tests/input")
+INPUT_PATH = Path("tests/input/interrupts")
 
 @pytest.mark.parametrize(
     ("n_cores", "trace_path", "expected"),
