@@ -1,0 +1,2 @@
+   kworker/u41:3-10292   [009] d..2.  0000.000001: sched_switch: prev_comm=kworker/u41:3 prev_pid=10292 prev_prio=100 prev_state=D ==> next_comm=swapper/9 next_pid=0 next_prio=120
+        A/165B:34-C-42   [007] d..2.  0000.000009: sched_waking: comm=kworker/u41:3 pid=10292 prio=100 target_cpu=009

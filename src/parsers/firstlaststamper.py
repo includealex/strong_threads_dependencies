@@ -1,5 +1,4 @@
 import re
-import numpy as np
 from pathlib import Path
 from .regexps import TS_PATTERN
 from .constants import (
@@ -26,7 +25,7 @@ class FirstLastStamperParser:
         ts_us = None        
         for cur_line in trace:
             if (match:=re.search(TS_PATTERN, cur_line)):
-                ts_us=int(np.round(float(match["time"])*S_TO_US))
+                ts_us=int(float(match["time"])*S_TO_US)
                 break
         return ts_us
 

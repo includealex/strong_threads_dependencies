@@ -1,7 +1,6 @@
 import portion
 from pathlib import Path
 import re
-import numpy as np
 from .constants import (
     S_TO_US,
 )
@@ -42,12 +41,12 @@ class InterruptsParser:
         for iline in ilines:
             if (entry_str in iline) and (match := re.search(entry_pattern, iline)):
                 tmp_core = int(match["cpu"])
-                cur_time_us = int(np.round(float(match["time"])*S_TO_US))
+                cur_time_us = int(float(match["time"])*S_TO_US)
                 current_entry_state[tmp_core] = cur_time_us
 
             elif (exit_str in iline) and (match := re.search(exit_pattern, iline)):
                 tmp_core = int(match["cpu"])
-                cur_time_us = int(np.round(float(match["time"])*S_TO_US))
+                cur_time_us = int(float(match["time"])*S_TO_US)
 
                 if tmp_core in current_entry_state.keys():
                     prev_time_us = current_entry_state.pop(tmp_core)
