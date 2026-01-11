@@ -1,4 +1,5 @@
 import portion
+from collections import defaultdict
 from pathlib import Path
 import re
 from .constants import (
@@ -18,16 +19,11 @@ class InterruptsParserException(Exception):
     pass
 
 class InterruptsParser:
-    n_cores = 0
     interrupts_per_core = None
 
     @classmethod
-    def __init__(cls, n_cores: int):
-        cls.n_cores = n_cores
-        cls.interrupts_per_core = {
-            i: portion.empty()
-            for i in range(n_cores)
-        }
+    def __init__(cls):
+        cls.interrupts_per_core = defaultdict(lambda: portion.empty())
 
     @classmethod
     def update_interrupt_info(

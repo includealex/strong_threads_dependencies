@@ -39,8 +39,8 @@ class WaitingIntervalInfo:
 
 class WaitingTimeParser:
     @classmethod
-    def __init__(cls, n_cores: int = 20):
-        cls.interrupts_parser = InterruptsParser(n_cores=n_cores)
+    def __init__(cls):
+        cls.interrupts_parser = InterruptsParser()
 
     @classmethod
     def gain_wait_info(cls, trace: Path) -> pd.DataFrame:
