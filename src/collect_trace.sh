@@ -101,7 +101,7 @@ main() {
     sudo_check
     enable_required ${tracing_dir}
 
-    output_dir="../output/"
+    output_dir="../output_traces/"
     mkdir -p ${output_dir}
 
     seconds_to_run=2
