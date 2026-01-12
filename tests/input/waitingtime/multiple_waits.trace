@@ -1,0 +1,12 @@
+         O-100        [016] d..2.  0000.000005: sched_switch: prev_comm=R prev_pid=9 prev_prio=100 prev_state=X ==> next_comm=T next_pid=46 next_prio=120
+         A-1          [009] d..2.  0000.000001: sched_switch: prev_comm=A prev_pid=1 prev_prio=100 prev_state=D ==> next_comm=U next_pid=42 next_prio=120
+         C-3          [006] d..2.  0000.000005: sched_switch: prev_comm=C prev_pid=3 prev_prio=100 prev_state=S ==> next_comm=V next_pid=43 next_prio=120
+         E-5          [002] d..2.  0000.000007: sched_switch: prev_comm=E prev_pid=5 prev_prio=100 prev_state=R ==> next_comm=X next_pid=44 next_prio=120
+         F-6          [001] d..2.  0000.000012: sched_waking: comm=E pid=5 prio=100 target_cpu=012
+         B-2          [007] d..2.  0000.000009: sched_waking: comm=A pid=1 prio=100 target_cpu=011
+         D-4          [005] d..2.  0000.000015: sched_waking: comm=C pid=3 prio=100 target_cpu=013
+         J-7          [006] d..2.  0000.000005: sched_switch: prev_comm=H prev_pid=8 prev_prio=100 prev_state=D ==> next_comm=W next_pid=45 next_prio=120
+kworker/u41:3-10292   [006] d..2.  1546.000005: sched_switch: kworker/u41:3 pid=10292 prev_prio=100 prev_state=D ==> next_comm=W next_pid=45 next_prio=120
+<idle>-0              [009] d.h1.  1546.877649: irq_handler_entry: irq=164 name=i915
+<idle>-0              [009] d.h5.  1546.877654: sched_waking: comm=kworker/u41:3 pid=10292 prio=100 target_cpu=009
+<idle>-0              [009] dNh1.  1546.877661: irq_handler_exit: irq=164 ret=handled
