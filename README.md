@@ -10,7 +10,7 @@ To collect trace, you should do in your terminal app:
 sudo src/collect_trace.sh
 ```
 
-To gain analysis results, you should **TODO**:
+To gain analysis results, you should:
 ```bash
-time python3 src/analysis_pipeline.py --parsing --analysis --input ${path_to_your_brilliant_trace}
+time python3 src/analysis_pipeline.py --parsing --analysis --input ${path_to_your_brilliant_trace} # or ${path_to_folder_with_brilliant_traces}
 ```
