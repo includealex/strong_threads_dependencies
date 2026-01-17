@@ -2,15 +2,20 @@ import pandas as pd
 import re
 import portion
 
+from collections import defaultdict
 from dataclasses import dataclass
 from pathlib import Path
-from .constants import SLEEP_STATES
+from .constants import (
+    SLEEP_STATES,
+    UNKNOWN_CORE,
+)
 from .events import (
     SchedSwitchOnEvent,
     SchedSwitchOffEvent,
     SchedWakingEvent,
 )
 from .interrupts import InterruptsParser
+from .firstlaststamper import FirstLastStamperParser
 from .regexps import (
     SCHED_SWITCH_PATTERN,
     SCHED_WAKING_PATTERN,
@@ -35,9 +40,7 @@ class WaitingIntervalInfo:
     wait_start_waiter_prio: int
     # TODO: 
     # 1. Find out, how to define wait start waker core
-    # 2. For capacity inversion information, capacity table
-    # should be found out for device.
-    wait_start_waker_core: int = -1
+    wait_start_waker_core: int = UNKNOWN_CORE
     wait_start_waker_prio: int = -1
 
 
@@ -45,6 +48,82 @@ class WaitingTimeParser:
     @classmethod
     def __init__(cls):
         cls.interrupts_parser = InterruptsParser()
+        cls.running_per_core = defaultdict(lambda: defaultdict(lambda: portion.empty()))
+
+    @classmethod
+    def calc_running_states(cls, first_ts_us: int, last_ts_us: int, ss_on_df: pd.DataFrame, ss_off_df: pd.DataFrame):
+        """
+        parsers running info per each pid
+        key is pid
+        value is dict:
+            - key is core number
+            - value is running states
+        """
+
+        on_df = ss_on_df.copy()
+        off_df = ss_off_df.copy()
+        
+        on_df = on_df.rename(columns={
+            "next_core": "core",
+            "next_pid": "pid",
+            "time_us": "start_time"
+        })
+        
+        off_df = off_df.rename(columns={
+            "prev_core": "core",
+            "prev_pid": "pid",
+            "time_us": "end_time"
+        })
+
+        # Synthetic logics is needed for case, when no sched_switch_on
+        # in the trace appeared but sched_switch off showed up.
+        min_ends = off_df.groupby(["core", "pid"])["end_time"].min().reset_index()
+        min_starts = on_df.groupby(["core", "pid"])["start_time"].min().reset_index()
+        merged_mins = pd.merge(min_ends, min_starts, on=["core", "pid"], how="left")
+        need_synthetic = merged_mins[
+            merged_mins["start_time"].isna() | 
+            (merged_mins["end_time"] < merged_mins["start_time"])
+        ]
+        if not need_synthetic.empty:
+            synthetic = pd.DataFrame({
+                "core": need_synthetic["core"],
+                "pid": need_synthetic["pid"],
+                "start_time": first_ts_us
+            })
+            on_df = pd.concat([on_df, synthetic], ignore_index=True)
+
+        on_df = on_df.sort_values("start_time")
+        off_df = off_df.sort_values("end_time")
+
+        merged = pd.merge_asof(
+            on_df,
+            off_df,
+            by=["core", "pid"],
+            left_on="start_time",
+            right_on="end_time",
+            direction="forward",
+        )[["start_time", "core", "pid", "end_time"]]
+
+        # case when no sched_switch off happened until trace end 
+        if not merged.empty:
+            merged["end_time"] = merged["end_time"].fillna(last_ts_us)
+
+        running_per_core = defaultdict(lambda: defaultdict(lambda: portion.empty()))
+        
+        for (pid, core), group in merged.groupby(["pid", "core"]):
+            intervals = []
+            for _, row in group.iterrows():
+                start = int(row["start_time"])
+                end = int(row["end_time"])
+                if start <= end:
+                    intervals.append(portion.closed(start, end))
+            
+            if intervals:
+                running_per_core[pid][core] |= portion.Interval(*intervals)
+        
+        cls.running_per_core = running_per_core
+
+        return running_per_core
 
     @classmethod
     def gain_wait_info(cls, trace: Path) -> pd.DataFrame:
@@ -54,12 +133,13 @@ class WaitingTimeParser:
         with open(trace, "r") as ifile:
             ilines = ifile.readlines()
 
-        _ss_on_df, ss_off_df, sw_df = cls.parse_sched_events(ilines)
+        ss_on_df, ss_off_df, sw_df = cls.parse_sched_events(ilines)
         interrupts_info = cls.interrupts_parser.parse_interrupts(trace)
         wait_df = cls.find_wait_dependencies(ss_off_df, sw_df, interrupts_info)
-        # TODO: apply here info update about default -1 waiting intervals info
-        # _ss_on_df should be used there.
-
+        first_ts_us, last_ts_us = FirstLastStamperParser().get_first_and_last_us(trace)
+        running_states = cls.calc_running_states(first_ts_us, last_ts_us, ss_on_df, ss_off_df)
+        
+        # TODO: apply here capacity_inversion info
         return wait_df
 
     @classmethod

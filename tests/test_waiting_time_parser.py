@@ -1,8 +1,10 @@
 import pytest
 import pandas as pd
+import portion
 
 from pathlib import Path
-from src.parsers.interrupts import InterruptsParser
+from src.parsers.constants import UNKNOWN_CORE
+from src.parsers.firstlaststamper import FirstLastStamperParser
 from src.parsers.waiting_time_parser import (
     WaitingTimeParser,
     WaitingIntervalInfo,
@@ -90,7 +92,7 @@ def test_parse_sched_events(
                     wait_end_target_cpu=9,
                     wait_start_waiter_core=9,
                     wait_start_waiter_prio=100,
-                    wait_start_waker_core=-1,
+                    wait_start_waker_core=UNKNOWN_CORE,
                     wait_start_waker_prio=-1,
                 ),
             ]),
@@ -112,7 +114,7 @@ def test_parse_sched_events(
                     wait_end_target_cpu=11,
                     wait_start_waiter_core=9,
                     wait_start_waiter_prio=100,
-                    wait_start_waker_core=-1,
+                    wait_start_waker_core=UNKNOWN_CORE,
                     wait_start_waker_prio=-1,
                 ),
                 WaitingIntervalInfo(
@@ -128,7 +130,7 @@ def test_parse_sched_events(
                     wait_end_target_cpu=13,
                     wait_start_waiter_core=6,
                     wait_start_waiter_prio=100,
-                    wait_start_waker_core=-1,
+                    wait_start_waker_core=UNKNOWN_CORE,
                     wait_start_waker_prio=-1,
                 )
             ]),
@@ -140,3 +142,44 @@ def test_calc_waiting_time(trace_path: Path, expected: pd.DataFrame):
     wait_df = WaitingTimeParser().gain_wait_info(INPUT_PATH / trace_path)
 
     assert wait_df.equals(expected)
+
+@pytest.mark.parametrize(
+    ("trace_path", "expected"),
+    [
+        pytest.param(
+            Path("double_sched_switch_on_off.trace"),
+            {
+                1: {
+                    9: portion.closed(1, 5) | portion.closed(10, 100)
+                },
+                2: {
+                    9: portion.closed(5, 10),
+                },
+            },
+            id="double sched switches running info",
+        ),
+        pytest.param(
+            Path("multiple_sched_switch_on_off.trace"),
+            {
+                1: {
+                    9: portion.closed(1, 5) | portion.closed(10, 100)
+                },
+                2: {
+                    9: portion.closed(5, 10),
+                    8: portion.closed(25, 30)
+                },
+                3: {
+                    8: portion.closed(1, 25) | portion.closed(30, 100)
+                },
+            },
+        )
+    ]
+)
+def test_calc_running_states(trace_path: Path, expected: dict):
+    parser = WaitingTimeParser()
+    ss_on_df, ss_off_df, _sw_df = parser.parse_sched_events(INPUT_PATH / trace_path)
+    first_ts_us, last_ts_us = FirstLastStamperParser.get_first_and_last_us(INPUT_PATH / trace_path)
+
+    result = parser.calc_running_states(first_ts_us, last_ts_us, ss_on_df, ss_off_df)
+
+    assert expected == result
