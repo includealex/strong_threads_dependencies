@@ -33,6 +33,10 @@ class WaitingIntervalInfo:
     wait_end_target_cpu: int
     wait_start_waiter_core: int
     wait_start_waiter_prio: int
+    # TODO: 
+    # 1. Find out, how to define wait start waker core
+    # 2. For capacity inversion information, capacity table
+    # should be found out for device.
     wait_start_waker_core: int = -1
     wait_start_waker_prio: int = -1
 
@@ -65,70 +69,66 @@ class WaitingTimeParser:
         sw_df: pd.DataFrame,
         interrupts_info: dict[int, portion.Interval],
     ) -> pd.DataFrame:
-        """
-        For wait dependencies, sched_switch offs with sleep states only(S,D) are used.
-        wait trace example:
-                     ...  no interrupt context start
-                     ...  time_1 ... sched_switch: ... prev_info=A prev_state=S(or D)
-        waker_info=B ...  time_2 ... sched_waking: ...    waiter=A
-                     ...  no interrupt context end
-        Here, waiting time = time_2 - time_1, waker is B, waiter is A.
-        """
 
         sleep_df = ss_off_df[ss_off_df["prev_state"].isin(SLEEP_STATES)].copy()
         wake_df = sw_df.copy()
 
-        match_col="_match_key_"
+        match_col = "_match_key_"
         sleep_df[match_col] = sleep_df["prev_pid"].astype(str) + "_" + sleep_df["prev_comm"]
         wake_df[match_col] = wake_df["waiter_pid"].astype(str) + "_" + wake_df["waiter_comm"]
 
-        merged = pd.merge(
+        if sleep_df.empty or wake_df.empty:
+            return pd.DataFrame()
+
+        sleep_df = sleep_df.rename(columns={"time_us": "time_us_sleep"})
+        wake_df = wake_df.rename(columns={"time_us": "time_us_wake"})
+
+        sleep_df = sleep_df.sort_values("time_us_sleep")
+        wake_df = wake_df.sort_values("time_us_wake")
+
+        merged = pd.merge_asof(
             sleep_df,
             wake_df,
-            left_on=match_col,
-            right_on=match_col,
+            by=match_col,
+            left_on="time_us_sleep",
+            right_on="time_us_wake",
+            direction="forward",
             suffixes=("_sleep", "_wake"),
-        )
+        ).dropna()
 
         if merged.empty:
-            return pd.Series()
+            return pd.DataFrame()
 
-        merged["time_diff"] = abs(merged["time_us_wake"] - merged["time_us_sleep"])
         result = []
-        for _, sleep_row in sleep_df.iterrows():
-            sleep_start_time_us = sleep_row["time_us"]
-            match_key = sleep_row[match_col]
+        for _, row in merged.iterrows():
+            if pd.isna(row["time_us_wake"]):
+                continue
 
-            matching = merged[merged[match_col] == match_key].copy()
+            wt_end_us = int(row["time_us_wake"])
+            waker_end_cpu = int(row["waker_cpu"])
+
+            interrupt_interval = interrupts_info.get(waker_end_cpu)
+            if interrupt_interval and wt_end_us in interrupt_interval:
+                continue
             
-            if matching.empty:
-                continue
+            wt_start_us = int(row["time_us_sleep"])
 
-            matching["time_diff"] = abs(matching["time_us_wake"] - sleep_start_time_us)
-            closest = matching.loc[matching["time_diff"].idxmin()]
-
-            wt_end_us = closest["time_us_wake"]
-            waker_end_cpu = closest["waker_cpu"]
-
-            # Check, if wake was due to interrupt context.
-            interrupt_interval = interrupts_info[waker_end_cpu]
-            if wt_end_us in interrupt_interval:
-                continue
-
-            result.append(WaitingIntervalInfo(
-                wait_start_waiter_core=sleep_row["prev_core"],
-                wait_start_waiter_prio=sleep_row["prev_prio"],
-                wait_end_target_cpu=closest["target_cpu"],
-                waiter_pid=sleep_row["prev_pid"],
-                waiter_state=sleep_row["prev_state"],
-                waker_end_cpu=waker_end_cpu,
-                waiter_comm=sleep_row["prev_comm"],
-                waker_pid=closest["waker_pid"],
-                waker_comm=closest["waker_comm"],
-                waiting_time_start_us=sleep_start_time_us,
-                waiting_time_end_us=wt_end_us,
-                waiting_duration_us=wt_end_us - sleep_start_time_us,               
-            ))
+            result.append(
+                WaitingIntervalInfo(
+                    wait_start_waiter_core=int(row["prev_core"]),
+                    wait_start_waiter_prio=int(row["prev_prio"]),
+                    wait_end_target_cpu=int(row["target_cpu"]),
+                    waiter_pid=int(row["prev_pid"]),
+                    waiter_state=row["prev_state"],
+                    waker_end_cpu=waker_end_cpu,
+                    waiter_comm=row["prev_comm"],
+                    waker_pid=int(row["waker_pid"]),
+                    waker_comm=row["waker_comm"],
+                    waiting_time_start_us=wt_start_us,
+                    waiting_time_end_us=wt_end_us,
+                    waiting_duration_us=wt_end_us - wt_start_us,
+                )
+            )
 
         return pd.DataFrame(result)
 
