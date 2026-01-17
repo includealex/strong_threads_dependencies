@@ -1,2 +1,3 @@
 S_TO_US = 1e6
 SLEEP_STATES = {"S", "D"}
+UNKNOWN_CPU_FREQ=-1

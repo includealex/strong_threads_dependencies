@@ -47,3 +47,11 @@ SCHED_WAKING_PATTERN = re.compile(
     r"prio=(?P<waiter_prio>\d+) "
     r"target_cpu=(?P<target_cpu>\d+)"
 )
+
+CPU_FREQUENCY_PATTERN = re.compile(
+    r"\[\d+\].*?"
+    r"(?P<time>\d+\.\d+):.*"
+    r"cpu_frequency: "
+    r"state=(?P<cpu_freq>\d+) "
+    r"cpu_id=(?P<cpu_id>\d+)"
+)

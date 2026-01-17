@@ -61,6 +61,7 @@ enable_required_events() {
 
     local events="\
         sched/sched_switch sched/sched_waking \
+        power/cpu_frequency \
         irq/irq_handler_entry irq/irq_handler_exit \
         irq/softirq_entry irq/softirq_exit \
         irq/tasklet_entry irq/tasklet_exit \
