@@ -60,7 +60,7 @@ enable_required_events() {
     echo 0 > "${events_path}/enable" 
 
     local events="\
-        sched/sched_wakeup sched/sched_switch sched/sched_waking \
+        sched/sched_switch sched/sched_waking \
         irq/irq_handler_entry irq/irq_handler_exit \
         irq/softirq_entry irq/softirq_exit \
         irq/tasklet_entry irq/tasklet_exit \
