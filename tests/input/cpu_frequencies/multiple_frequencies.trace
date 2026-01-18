@@ -1,0 +1,11 @@
+          <idle>-0       [010] d.h7.  0000.000001: random_event: random_stuff=random
+          <idle>-0       [010] d.h7.  0000.000002: cpu_frequency: state=400000 cpu_id=10
+          <idle>-0       [010] d.h7.  0000.000010: random_event: random_stuff=random
+          <idle>-0       [012] d.h7.  0000.000013: cpu_frequency: state=200000 cpu_id=12
+          <idle>-0       [010] d.h7.  0000.000011: cpu_frequency: state=800000 cpu_id=10
+          <idle>-0       [010] d.h7.  0000.000030: random_event: random_stuff=random
+          <idle>-0       [012] d.h7.  0000.000033: cpu_frequency: state=1200000 cpu_id=12
+          <idle>-0       [000] d.h7.  0000.000063: cpu_frequency: state=1400000 cpu_id=0
+          <idle>-0       [010] d.h7.  0000.000078: cpu_frequency: state=400000 cpu_id=10
+
+          <idle>-0       [010] d.h7.  0000.000100: random_event: random_stuff=random

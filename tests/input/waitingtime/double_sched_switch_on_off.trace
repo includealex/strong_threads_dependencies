@@ -1,0 +1,4 @@
+    <idle>-0       [010] d.h7.  0000.000001: random_event: random_stuff=random
+         A-1       [009] d..2.  0000.000005: sched_switch: prev_comm=A prev_pid=1 prev_prio=100 prev_state=D ==> next_comm=B next_pid=2 next_prio=120
+         B-2       [009] d..2.  0000.000010: sched_switch: prev_comm=B prev_pid=2 prev_prio=120 prev_state=D ==> next_comm=A next_pid=1 next_prio=100
+    <idle>-0       [010] d.h7.  0000.000100: random_event: random_stuff=random

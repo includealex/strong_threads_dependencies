@@ -64,7 +64,7 @@ class InterruptsParser:
         # but irq_entry was met:
         # ... irq_entry
         # ... trace_end
-        # ... irq_exit <- assuming that entry was here
+        # ... irq_exit <- assuming that exit was here
         # for provided trace, it will be assumed that
         # irq_end was till the trace_end ts. 
         for tmp_core, prev_time_us in current_entry_state.items():
