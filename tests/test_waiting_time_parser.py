@@ -3,7 +3,7 @@ import pandas as pd
 import portion
 
 from pathlib import Path
-from src.parsers.constants import UNKNOWN_CORE
+from src.parsers.constants import IDLE_CORE
 from src.parsers.firstlaststamper import FirstLastStamperParser
 from src.parsers.waiting_time_parser import (
     WaitingTimeParser,
@@ -92,7 +92,7 @@ def test_parse_sched_events(
                     wait_end_target_cpu=9,
                     wait_start_waiter_core=9,
                     wait_start_waiter_prio=100,
-                    wait_start_waker_core=UNKNOWN_CORE,
+                    wait_start_waker_core=IDLE_CORE,
                     wait_start_waker_prio=-1,
                 ),
             ]),
@@ -114,7 +114,7 @@ def test_parse_sched_events(
                     wait_end_target_cpu=11,
                     wait_start_waiter_core=9,
                     wait_start_waiter_prio=100,
-                    wait_start_waker_core=UNKNOWN_CORE,
+                    wait_start_waker_core=IDLE_CORE,
                     wait_start_waker_prio=-1,
                 ),
                 WaitingIntervalInfo(
@@ -130,7 +130,7 @@ def test_parse_sched_events(
                     wait_end_target_cpu=13,
                     wait_start_waiter_core=6,
                     wait_start_waiter_prio=100,
-                    wait_start_waker_core=UNKNOWN_CORE,
+                    wait_start_waker_core=IDLE_CORE,
                     wait_start_waker_prio=-1,
                 )
             ]),
@@ -140,6 +140,7 @@ def test_parse_sched_events(
 )
 def test_calc_waiting_time(trace_path: Path, expected: pd.DataFrame):
     wait_df = WaitingTimeParser().gain_wait_info(INPUT_PATH / trace_path)
+    wait_df = wait_df.drop(columns=["wait_start_waiter_freq", "wait_start_waker_freq"])
 
     assert wait_df.equals(expected)
 

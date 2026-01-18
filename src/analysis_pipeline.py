@@ -40,6 +40,7 @@ class AnalysisPipeline:
     @classmethod
     def run_parsing_stuff(cls, input_path: Path, output_path: Path):
         wt_df = WaitingTimeParser().gain_wait_info(input_path)
+        wt_df = wt_df.sort_values(by="waiting_duration_us", ascending=False)
         wt_df.to_csv(Path(f"{output_path / input_path.stem}.csv"), index=False)
 
     @classmethod

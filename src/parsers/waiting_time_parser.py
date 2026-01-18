@@ -6,14 +6,17 @@ from collections import defaultdict
 from dataclasses import dataclass
 from pathlib import Path
 from .constants import (
+    IDLE_CORE,
     SLEEP_STATES,
     UNKNOWN_CORE,
+    UNKNOWN_CPU_FREQ,
 )
 from .events import (
     SchedSwitchOnEvent,
     SchedSwitchOffEvent,
     SchedWakingEvent,
 )
+from .cpu_freq_parser import CpuFreqParser
 from .interrupts import InterruptsParser
 from .firstlaststamper import FirstLastStamperParser
 from .regexps import (
@@ -38,8 +41,6 @@ class WaitingIntervalInfo:
     wait_end_target_cpu: int
     wait_start_waiter_core: int
     wait_start_waiter_prio: int
-    # TODO: 
-    # 1. Find out, how to define wait start waker core
     wait_start_waker_core: int = UNKNOWN_CORE
     wait_start_waker_prio: int = -1
 
@@ -48,7 +49,20 @@ class WaitingTimeParser:
     @classmethod
     def __init__(cls):
         cls.interrupts_parser = InterruptsParser()
+        cls.cpu_freq_parser = CpuFreqParser()
         cls.running_per_core = defaultdict(lambda: defaultdict(lambda: portion.empty()))
+
+    @classmethod
+    def get_running_core(cls, pid: int, ts_us: int):
+        core_dicts = cls.running_per_core[pid]
+
+        result_core = IDLE_CORE
+        for core, running_states in core_dicts.items():
+            if ts_us in running_states:
+                result_core = core
+                break
+
+        return result_core
 
     @classmethod
     def calc_running_states(cls, first_ts_us: int, last_ts_us: int, ss_on_df: pd.DataFrame, ss_off_df: pd.DataFrame):
@@ -126,6 +140,34 @@ class WaitingTimeParser:
         return running_per_core
 
     @classmethod
+    def apply_cores_info(cls, wait_df: pd.DataFrame):
+        df = wait_df.copy()
+
+        def process_row(row):
+            wait_start_us = int(row["waiting_time_start_us"])
+            waiter_core = int(row["wait_start_waiter_core"])
+            waker_pid = int(row["waker_pid"])
+            waker_core = cls.get_running_core(waker_pid, wait_start_us)
+
+            waiter_freq = cls.cpu_freq_parser.get_freq_info(waiter_core, wait_start_us)
+
+            if waker_core != IDLE_CORE:
+                waker_freq = cls.cpu_freq_parser.get_freq_info(waker_core, wait_start_us)
+            else:
+                waker_freq = 0
+            
+            return pd.Series({
+                "wait_start_waiter_freq": waiter_freq,
+                "wait_start_waker_core": waker_core,
+                "wait_start_waker_freq": waker_freq
+            })
+        
+        result_columns = df.apply(process_row, axis=1)
+        df[["wait_start_waiter_freq", "wait_start_waker_core", "wait_start_waker_freq"]] = result_columns
+
+        return df
+
+    @classmethod
     def gain_wait_info(cls, trace: Path) -> pd.DataFrame:
         if not trace.exists():
             raise WaitingTimeParserException(f"no {trace=} provided exists")
@@ -137,9 +179,10 @@ class WaitingTimeParser:
         interrupts_info = cls.interrupts_parser.parse_interrupts(trace)
         wait_df = cls.find_wait_dependencies(ss_off_df, sw_df, interrupts_info)
         first_ts_us, last_ts_us = FirstLastStamperParser().get_first_and_last_us(trace)
-        running_states = cls.calc_running_states(first_ts_us, last_ts_us, ss_on_df, ss_off_df)
-        
-        # TODO: apply here capacity_inversion info
+        cls.calc_running_states(first_ts_us, last_ts_us, ss_on_df, ss_off_df)
+        cls.cpu_freq_parser.parse_frequencies(trace)
+        wait_df = cls.apply_cores_info(wait_df)
+
         return wait_df
 
     @classmethod
