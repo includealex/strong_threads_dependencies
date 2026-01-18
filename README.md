@@ -14,3 +14,7 @@ To gain analysis results, you should:
 ```bash
 time python3 src/analysis_pipeline.py --parsing --analysis --input ${path_to_your_brilliant_trace} # or ${path_to_folder_with_brilliant_traces}
 ```
+
+Example of analysis, highlightning capacity inversion related problems:
+
+![picture](pictures/top_capacity_inversion_depedencies.png)
