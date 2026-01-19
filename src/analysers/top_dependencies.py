@@ -1,4 +1,5 @@
 import matplotlib.pyplot as plt
+import numpy as np
 import pandas as pd
 
 from pathlib import Path
@@ -78,19 +79,26 @@ class DependenciesLister:
         top_duration = df.nlargest(n_dependencies, "total_duration_us").sort_values("total_duration_us")
         top_dependencies = df.nlargest(n_dependencies, "total_dependencies").sort_values("total_dependencies")        
 
-        _fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(20, 8), dpi=300)
+        _fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(20, 8), dpi=300, sharex=False)
 
-        for ax, data, title, xlabel in zip([ax1, ax2], 
+        for cur_ax, data, title, xlabel, idx in zip([ax1, ax2], 
                                         [top_duration, top_dependencies],
                                         ["total duration", "total amount of dependencies"],
-                                        ["duration (us)", "dependencies"]):
+                                        ["duration (us)", "dependencies"],
+                                        [1,2]):
             
-            _bars = ax.barh(range(len(data)), data[data.columns[1]].sort_values())
-            ax.set_yticks(range(len(data)))
-            ax.set_yticklabels(data["waker_waiter_pair"], fontsize=8)
-            ax.set_xlabel(xlabel)
-            ax.set_title(f"top {n_dependencies} dependencies by {title}")
-            ax.grid(True, axis="x", alpha=0.3)
+            values = data[data.columns[idx]].sort_values().reset_index(drop=True)
+
+            for i, value in enumerate(values):
+                cur_ax.broken_barh([(0, value)], (i - 0.4, 0.8), 
+                            facecolors='steelblue', alpha=0.7)
+
+            cur_ax.set_yticks(range(len(data)))
+            cur_ax.set_yticklabels(data["waker_waiter_pair"], fontsize=8)
+            cur_ax.set_xlabel(xlabel)
+            cur_ax.set_title(f"top {n_dependencies} dependencies by {title}")
+            cur_ax.grid(True, axis="x", alpha=0.3)
+
 
         plt.suptitle(huge_title)
         plt.tight_layout()
